@@ -22,12 +22,15 @@
   },
   "private": true,
   "dependencies": {
+    "@angular/animations": "^20.3.4",
     "@angular/common": "^20.1.0",
     "@angular/compiler": "^20.1.0",
     "@angular/core": "^20.1.0",
     "@angular/forms": "^20.1.0",
     "@angular/platform-browser": "^20.1.0",
     "@angular/router": "^20.1.0",
+    "@sgratzl/chartjs-chart-boxplot": "^4.4.5",
+    "chart.js": "^4.5.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"
