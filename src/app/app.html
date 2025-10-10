@@ -24,11 +24,11 @@
     </div>
 
     <div class="card">
-      <label>Khoảng thời gian</label>
+      <!-- <label>Khoảng thời gian</label>
       <div style="display:flex; gap:8px; margin-top:8px;">
         <input class="input" type="date" [(ngModel)]="fromDate" />
         <input class="input" type="date" [(ngModel)]="toDate" />
-      </div>
+      </div> -->
 
       <label style="margin-top:8px; display:block;">Danh sách phân vị (%)</label>
       <input class="input" [(ngModel)]="percentiles" placeholder="25,50,75,90,95,99" />
@@ -54,10 +54,9 @@
       </div>
     </div>
 
-    <canvas #histogramCanvas height="100"></canvas>
     <canvas #boxplotCanvas height="100" style="margin-top:16px"></canvas>
 
-    <div style="overflow:auto; margin-top:16px;">
+        <div style="overflow:auto; margin-top:16px;">
       <table>
         <thead>
           <tr><th>Service</th><th>Percentile</th><th>Giá trị</th></tr>
@@ -71,5 +70,7 @@
         </tbody>
       </table>
     </div>
+
+    <canvas #histogramCanvas height="100"></canvas>
   </section>
 </div>

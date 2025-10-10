@@ -51,7 +51,7 @@ export class App {
   errorFilter = '';
   fromDate = '';
   toDate = '';
-  percentiles = '25, 50, 75, 90, 95, 99';
+  percentiles = '50, 80, 90, 95, 99, 99.5, 99.7';
   method: 'nearest' | 'linear' = 'nearest';
 
   file?: File;
@@ -156,7 +156,7 @@ export class App {
     });
 
     this.boxChart = new Chart(this.boxplotCanvas!.nativeElement.getContext('2d')!, {
-      type: 'boxplot' as any,
+      type: 'bar' as any,
       data: {
         labels: this.boxes.map((b) => b.svc),
         datasets: [
@@ -189,7 +189,7 @@ export class App {
       },
       options: {
         scales: { y: { beginAtZero: true } },
-        plugins: { tooltip: { enabled: true } },
+        plugins: { title: { display: true, text: 'Boxplot (min-Q1-median-Q3-max)' } },
       },
     });
   }
