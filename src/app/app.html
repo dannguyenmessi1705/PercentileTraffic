@@ -54,6 +54,36 @@
       </div>
     </div>
 
+    <div class="time-card">
+      <div class="time-card__header">
+        <div>
+          <h3>Percentile theo block thời gian</h3>
+          <p>Trục tung là p{{ timePercentile }} ({{ fieldName || 'duration' }}), trục hoành là các block {{ timeBucketMinutes }} phút.</p>
+        </div>
+      </div>
+      <div class="time-card__controls">
+        <label class="time-card__field">
+          <span>Percentile mong muốn</span>
+          <input class="input" type="number" step="0.1" min="0.1" max="100" [(ngModel)]="timePercentile" />
+        </label>
+        <label class="time-card__field">
+          <span>Độ dài block (phút)</span>
+          <input class="input" type="number" min="1" [(ngModel)]="timeBucketMinutes" />
+        </label>
+        <button class="btn btn-orange" (click)="refreshTimeSeries()">Vẽ biểu đồ</button>
+      </div>
+      <p class="time-card__note">
+        Tooltip: dòng 1 là mốc thời gian của block; dòng 2 là p{{ timePercentile }} với độ dài block hiện tại;
+        dòng 3 (N) là số giao dịch góp phần tính percentile.
+      </p>
+      <ng-container *ngIf="timeBuckets.length; else emptyTimeChart">
+        <canvas #timeseriesCanvas height="120"></canvas>
+      </ng-container>
+      <ng-template #emptyTimeChart>
+        <p class="empty-note">Không đủ timestamp hợp lệ để tính percentile theo block.</p>
+      </ng-template>
+    </div>
+
     <canvas #boxplotCanvas height="100" style="margin-top:16px"></canvas>
 
         <div style="overflow:auto; margin-top:16px;">
