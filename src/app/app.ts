@@ -50,8 +50,8 @@ type TimelinePoint = {
 
 type TimeBucket = {
   label: string;
-  value: number;
   count: number;
+  percentiles: Record<number, number>;
 };
 
 @Component({
@@ -71,7 +71,8 @@ export class App {
   percentiles = '50, 80, 90, 95, 99, 99.5, 99.7';
   method: 'nearest' | 'linear' = 'nearest';
   timeBucketMinutes = 5;
-  timePercentile = 99;
+  timePercentileInput = '99';
+  timePercentileValues: number[] = [];
 
   file?: File;
   groups: Groups = {};
@@ -165,34 +166,40 @@ export class App {
 
   refreshTimeSeries(silent = false) {
     const bucketMinutes = Number(this.timeBucketMinutes);
-    const percentile = Number(this.timePercentile);
+    const percentiles = Array.from(new Set(parsePercentiles(this.timePercentileInput))).sort(
+      (a, b) => a - b
+    );
 
     if (!Number.isFinite(bucketMinutes) || bucketMinutes <= 0) {
       if (!silent) alert('Độ dài block (phút) phải lớn hơn 0.');
       this.timeBuckets = [];
+      this.timePercentileValues = percentiles;
       this.renderTimeChart();
       return;
     }
 
-    if (!Number.isFinite(percentile) || percentile <= 0 || percentile > 100) {
-      if (!silent) alert('Percentile phải nằm trong (0, 100].');
+    if (!percentiles.length) {
+      if (!silent) alert('Cần nhập ít nhất một percentile hợp lệ (0-100).');
       this.timeBuckets = [];
+      this.timePercentileValues = [];
       this.renderTimeChart();
       return;
     }
 
     if (!this.filteredPoints.length) {
       this.timeBuckets = [];
+      this.timePercentileValues = percentiles;
       this.renderTimeChart();
       return;
     }
 
-    this.timeBuckets = this.computeTimeBuckets(bucketMinutes, percentile);
+    this.timePercentileValues = percentiles;
+    this.timeBuckets = this.computeTimeBuckets(bucketMinutes, percentiles);
     this.renderTimeChart();
   }
 
-  private computeTimeBuckets(bucketMinutes: number, percentile: number): TimeBucket[] {
-    if (!this.filteredPoints.length) return [];
+  private computeTimeBuckets(bucketMinutes: number, percentiles: number[]): TimeBucket[] {
+    if (!this.filteredPoints.length || !percentiles.length) return [];
     const bucketMs = bucketMinutes * 60_000;
     const picker = this.getPicker();
     const buckets = new Map<number, number[]>();
@@ -211,14 +218,17 @@ export class App {
       .sort(([a], [b]) => a - b)
       .map(([start, vals]) => {
         vals.sort((a, b) => a - b);
-        const raw = picker(vals, percentile);
+        const pctMap: Record<number, number> = {};
+        for (const p of percentiles) {
+          const raw = picker(vals, p);
+          pctMap[p] = Number.isFinite(raw) ? Number(raw.toFixed(6)) : NaN;
+        }
         return {
           label: this.formatBucketLabel(start),
-          value: Number(raw.toFixed(6)),
           count: vals.length,
+          percentiles: pctMap,
         };
-      })
-      .filter((bucket) => Number.isFinite(bucket.value));
+      });
   }
 
   private formatBucketLabel(startMs: number): string {
@@ -353,17 +363,18 @@ export class App {
       type: 'line',
       data: {
         labels: this.timeBuckets.map((b) => b.label),
-        datasets: [
-          {
-            label: `p${this.timePercentile} (${this.timeBucketMinutes}p block)`,
-            data: this.timeBuckets.map((b) => b.value),
-            borderColor: '#f97316',
-            backgroundColor: 'rgba(249,115,22,0.15)',
-            fill: true,
+        datasets: this.timePercentileValues.map((p, idx) => {
+          const palette = this.getLineColor(idx);
+          return {
+            label: `p${p} (${this.timeBucketMinutes}p block)`,
+            data: this.timeBuckets.map((b) => b.percentiles[p] ?? null),
+            borderColor: palette.stroke,
+            backgroundColor: palette.fill,
+            fill: false,
             tension: 0.3,
             pointRadius: 3,
-          },
-        ],
+          };
+        }),
       },
       options: {
         scales: {
@@ -376,8 +387,9 @@ export class App {
           },
           tooltip: {
             callbacks: {
-              afterLabel: (ctx) => {
-                const bucket = this.timeBuckets[ctx.dataIndex];
+              afterBody: (items) => {
+                if (!items.length) return '';
+                const bucket = this.timeBuckets[items[0].dataIndex];
                 if (!bucket) return '';
                 return `N = ${bucket.count}`;
               },
@@ -386,6 +398,18 @@ export class App {
         },
       },
     });
+  }
+
+  private getLineColor(idx: number) {
+    const palette = [
+      { stroke: '#f97316', fill: 'rgba(249,115,22,0.15)' },
+      { stroke: '#10b981', fill: 'rgba(16,185,129,0.15)' },
+      { stroke: '#3b82f6', fill: 'rgba(59,130,246,0.15)' },
+      { stroke: '#a855f7', fill: 'rgba(168,85,247,0.15)' },
+      { stroke: '#ec4899', fill: 'rgba(236,72,153,0.15)' },
+      { stroke: '#eab308', fill: 'rgba(234,179,8,0.15)' },
+    ];
+    return palette[idx % palette.length];
   }
 
   saveChart(which: 'hist' | 'box') {
